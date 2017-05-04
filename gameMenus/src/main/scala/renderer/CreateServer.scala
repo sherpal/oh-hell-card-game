@@ -13,8 +13,6 @@ import scala.scalajs.js
  * Manage what happens in the create server html file.
  */
 object CreateServer {
-  if (scala.scalajs.LinkingInfo.developmentMode) println("We are in Create Server")
-
   def createServer(port: Int): Unit = {
     VariableStorage.storeValue("isThereServer", port.toString)
 
@@ -29,10 +27,6 @@ object CreateServer {
         "../../server/server/server.html")
     )
     win.webContents.openDevTools()
-
-    if (!scala.scalajs.LinkingInfo.developmentMode) {
-      win.hide()
-    }
 
     dom.window.location.href = "../mainscreen/mainscreen.html"
   }

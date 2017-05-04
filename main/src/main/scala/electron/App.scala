@@ -12,6 +12,8 @@ import scala.scalajs.js.annotation.{JSImport, ScalaJSDefined}
 @JSImport("electron", "app")
 object App extends js.Object {
   def on(callbackName: String, handler: js.Function): Unit = js.native
+
+  def quit(): Unit = js.native
 }
 
 

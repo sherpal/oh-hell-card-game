@@ -1,5 +1,5 @@
 {
-  "main": "./mainprocess/main-fastopt.js",
+  "main": "./main.js",
   "name": "Rikiki",
   "version": "0.0.1"
 }

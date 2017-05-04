@@ -49,7 +49,15 @@
 
     <p style = "position: fixed; right: 0; bottom; 0" id = "isThereServer">No server on this computer</p>
     <script type="text/javascript">
-        const ScalaJS = require("../js-files/gamemenus-fastopt.js")
+        const fs = require('fs')
+        const path = require('path')
+        if (fs.existsSync(path.join(__dirname, "../js-files/gamemenus-opt.js"))) {
+            const ScalaJS = require("../js-files/gamemenus-opt.js")
+        } else if (fs.existsSync(path.join(__dirname, "../js-files/gamemenus-fastopt.js"))) {
+            const ScalaJS = require("../js-files/gamemenus-fastopt.js")
+        } else {
+            console.error("compiled files not found")
+        }
     </script>
     </body>
 </html>

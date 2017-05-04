@@ -4,6 +4,7 @@ import sharednodejsapis.{BrowserWindowOptions, Path}
 
 import scala.scalajs.js.{JSApp, UndefOr}
 import electron.{App, BrowserWindowMainProcess}
+import org.scalajs.dom.raw.Event
 
 import scala.collection.mutable
 import scala.scalajs.js
@@ -18,8 +19,10 @@ object MainProcess extends JSApp {
 
     val windows: mutable.Set[BrowserWindowMainProcess] = mutable.Set()
 
+    var win: BrowserWindowMainProcess = null
+
     def createWindow(): Unit = {
-      val win = new BrowserWindowMainProcess(new BrowserWindowOptions {
+      win = new BrowserWindowMainProcess(new BrowserWindowOptions {
         override val width: UndefOr[Int] = 1400
         override val height: UndefOr[Int] = 1000
       })
@@ -49,12 +52,16 @@ object MainProcess extends JSApp {
       win.setMenu(null)
 
 
-      windows += win
+      //windows += win
     }
 
     App.on("ready", () => createWindow())
 
+    App.on("window-all-closed", () => App.quit())
 
-
+    App.on("browser-window-created", (_: Event, window: BrowserWindowMainProcess) => {
+      windows += window
+      println("window created")
+    })
   }
 }

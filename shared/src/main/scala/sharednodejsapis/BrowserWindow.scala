@@ -27,6 +27,7 @@ class BrowserWindow(options: BrowserWindowOptions) extends EventEmitter {
 
   def getParentWindow(): BrowserWindow = js.native
 
+  def removeAllListeners(eventType: String): Unit = js.native
 
 }
 

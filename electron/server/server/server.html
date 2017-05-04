@@ -14,7 +14,15 @@
 		</div>
 		<script type = "text/javascript"></script>
 		<script>
-			const ScalaJS = require('../js-files/server-fastopt.js')
+        const fs = require('fs')
+        const path = require('path')
+        if (fs.existsSync(path.join(__dirname, "../js-files/server-opt.js"))) {
+            const ScalaJS = require("../js-files/server-opt.js")
+        } else if (fs.existsSync(path.join(__dirname, "../js-files/server-fastopt.js"))) {
+            const ScalaJS = require("../js-files/server-fastopt.js")
+        } else {
+            console.error("compiled files not found")
+        }
 		</script>
   </body>
 </html>

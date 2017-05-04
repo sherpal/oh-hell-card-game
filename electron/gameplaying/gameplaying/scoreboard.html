@@ -20,7 +20,16 @@
 </table>
 <a href="../../gamemenus/mainscreen/mainscreen.html" class="btn btn-primary">Go back to menu</a>
 <script>
-    const ScalaJS = require('../js-files/gameplaying-fastopt.js')
+    const fs = require('fs')
+    const path = require('path')
+    if (fs.existsSync(path.join(__dirname, "../js-files/gameplaying-opt.js"))) {
+        const ScalaJS = require("../js-files/gameplaying-opt.js")
+    } else if (fs.existsSync(path.join(__dirname, "../js-files/gameplaying-fastopt.js"))) {
+        const ScalaJS = require("../js-files/gameplaying-fastopt.js")
+    } else {
+        alert("compiled files not found")
+        console.error("compiled files not found")
+    }
 </script>
 </body>
 </html>
