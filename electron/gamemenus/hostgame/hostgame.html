@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel = "stylesheet" href = "../lumen.css">
+    <title>Oh Hell!</title>
+</head>
+<body>
+    <h1 id="host-game">Oh Hell!</h1>
+    <h2 id="subtitle">Host Game</h2>
+
+    <form class="form-horizontal" style = "width: 600px">
+        <fieldset>
+            <div class="form-group">
+                <label for="inputName" class="col-lg-2 control-label">Player Name</label>
+                <div class="col-lg-10">
+                    <input type="text" class="form-control" id="inputName" placeholder="name">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputGameName" class="col-lg-2 control-label">Game Name</label>
+                <div class="col-lg-10">
+                    <input type="text" class="form-control" id="inputGameName" placeholder="name">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputAddress" class="col-lg-2 control-label">Address</label>
+                <div class="col-lg-10">
+                    <input type="text" class="form-control" id="inputAddress" placeholder="address">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputPort" class="col-lg-2 control-label">Port</label>
+                <div class="col-lg-10">
+                    <input type="number" class="form-control" id="inputPort" placeholder="port">
+                    <div class="alert alert-dismissible alert-danger" id="portError" style="visibility: hidden">
+                        Malformed port number.
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-lg-10 col-lg-offset-2">
+                    <a href = "../mainscreen/mainscreen.html" type="reset" class="btn btn-default" id="back">Back</a>
+                    <a type="submit" class="btn btn-primary" id="confirm">Host</a>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+
+    <p style = "position: fixed; right: 0; bottom; 0" id = "isThereServer">No server on this computer</p>
+    <script type="text/javascript">
+        const ScalaJS = require("../js-files/gamemenus-fastopt.js")
+    </script>
+    </body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel = "stylesheet" href = "../lumen.css">
+    <title>Oh Hell!</title>
+</head>
+<body>
+    <h1>Oh Hell!</h1>
+    <h2 id="subtitle">Join Game Settings</h2>
+
+    <h3 id="gameName">Game Name</h3>
+    <h4 id="playerName">Player Name</h4>
+    <h4 id="connection-info">Connected to address:port</h4>
+
+    <p>Player connected:</p>
+    <div style="width: 500px; height: 200px; overflow: scroll;">
+        <ul id="playerList">
+        </ul>
+    </div>
+
+    <br>
+
+    <form class="form-horizontal" style = "width: 300px">
+        <fieldset>
+            <span class="help-block" id="nbrCards">
+                Maximum number of cards in hand
+            </span>
+            <span class="help-block" id="deckComposition">
+                    Deck composition:
+                    <br>
+                    Number of cards per color: 13
+                    <br>
+                    Number of colors: 4
+                </span>
+            <div class="form-group">
+                <div class="col-lg-10 col-lg-offset-2">
+                    <a type="reset" class="btn btn-default" id="back">Cancel</a>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+    <script>
+        const ScalaJS = require("../js-files/gamemenus-fastopt.js")
+    </script>
+</body>
+</html>
