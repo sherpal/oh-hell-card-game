@@ -3,6 +3,8 @@ A very modest application to play the Oh Hell! card game with your friends.
 
 In the project files, the game is called `Rikiki` according to (one of) the french name(s) of the game.
 
+A realease is available for Windows.
+
 ## The rules, roughly
 
 The Oh Hell! card game (it has many different names) is a trick based card game. At each deal, you have to bet the number of tricks you will take.
@@ -62,5 +64,6 @@ The GUI is currently utterly ugly, but this comes from my lack of artistic fiber
 - add a "card viewer", to help people for which the cards would be too small
 - allow to save and load games
 - when it is the 1 card deal, show a decoy card to click on when it's your turn
+- drag cards on the table instead of clicking on them in order to play them (?)
 - in game chat
 

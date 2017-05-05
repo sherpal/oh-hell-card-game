@@ -51,8 +51,6 @@ object MainProcess extends JSApp {
 
       win.setMenu(null)
 
-
-      //windows += win
     }
 
     App.on("ready", () => createWindow())
@@ -61,7 +59,6 @@ object MainProcess extends JSApp {
 
     App.on("browser-window-created", (_: Event, window: BrowserWindowMainProcess) => {
       windows += window
-      println("window created")
     })
   }
 }
