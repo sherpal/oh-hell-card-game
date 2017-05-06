@@ -3,7 +3,9 @@ A very modest application to play the Oh Hell! card game with your friends.
 
 In the project files, the game is called `Rikiki` according to (one of) the french name(s) of the game.
 
-A realease is available for Windows.
+## Releases
+
+A [release](https://github.com/sherpal/oh-hell-card-game/releases) is available for Windows and Linux.
 
 ## The rules, roughly
 

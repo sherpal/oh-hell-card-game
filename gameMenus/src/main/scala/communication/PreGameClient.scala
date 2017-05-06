@@ -93,6 +93,7 @@ class PreGameClient(val address: String, val port: Int, playerName: String, game
         case GameDoesNotExist(gName) =>
           if (scala.scalajs.LinkingInfo.developmentMode) println(s"game $gName does not exist.")
           dom.window.alert(s"Game `$gName` does not exist.")
+          endConnection()
 
         case TestMessage(message) =>
           if (scala.scalajs.LinkingInfo.developmentMode) println(message)
