@@ -63,9 +63,9 @@ The GUI is currently utterly ugly, but this comes from my lack of artistic fiber
 - when clicking on launch game, ask confirmation by showing all game detail
 - fix the errors in server when a game ends (should be fixed (hopefully))
 - allow to kick someone from the game
-- add a "card viewer", to help people for which the cards would be too small
+- add a "card viewer", to help people for which the cards would be too small (done, but maybe now there is the need of bigger card images)
 - allow to save and load games
-- when it is the 1 card deal, show a decoy card to click on when it's your turn
+- when it is the 1 card deal, show a decoy card to click on when it's your turn (done)
 - drag cards on the table instead of clicking on them in order to play them (?)
 - in game chat
 

@@ -19,10 +19,9 @@ object MainProcess extends JSApp {
 
     val windows: mutable.Set[BrowserWindowMainProcess] = mutable.Set()
 
-    var win: BrowserWindowMainProcess = null
 
     def createWindow(): Unit = {
-      win = new BrowserWindowMainProcess(new BrowserWindowOptions {
+      val win = new BrowserWindowMainProcess(new BrowserWindowOptions {
         override val width: UndefOr[Int] = 1400
         override val height: UndefOr[Int] = 1000
       })
@@ -43,14 +42,11 @@ object MainProcess extends JSApp {
       if (scala.scalajs.LinkingInfo.developmentMode)
         win.webContents.openDevTools()
 
-      win.on("closed", () => windows -= win )
-
       win.webContents.on("did-finish-load", () => {
         Storage.storeVariable(win.webContents, "windowId", win.id)
       })
 
       win.setMenu(null)
-
     }
 
     App.on("ready", () => createWindow())
@@ -59,6 +55,7 @@ object MainProcess extends JSApp {
 
     App.on("browser-window-created", (_: Event, window: BrowserWindowMainProcess) => {
       windows += window
+      window.on("closed", () => windows -= window)
     })
   }
 }

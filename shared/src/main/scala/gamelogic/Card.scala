@@ -44,4 +44,6 @@ object Card {
 
   def handWinner(cards: Iterable[Card], trump: CardColor, startingColor: CardColor): Card =
   cards.foldLeft(cards.head)((c1: Card, c2: Card) => if (c1.beat(c2, trump, startingColor)) c1 else c2)
+
+  val backImageSource: String = "../../card_images/back.png"
 }

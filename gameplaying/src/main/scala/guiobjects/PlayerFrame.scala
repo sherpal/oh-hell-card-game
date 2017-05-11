@@ -100,7 +100,7 @@ class PlayerFrame(val player: String, playerClient: PlayerClient) extends Frame(
   })
 
 
-  private val handFrame: HandFrame = new HandFrame(player, playerClient, frameWidth = 70.0)
+  val handFrame: HandFrame = new HandFrame(player, playerClient, frameWidth = 70.0)
   handFrame.removeScript(ScriptKind.OnClick)
   handFrame.setParent(this)
 

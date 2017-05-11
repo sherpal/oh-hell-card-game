@@ -110,5 +110,9 @@ class PlayTable(playersInOrder: Vector[PlayerFrame], handFrame: HandFrame, playe
     placePlayedCards(cardPlayed).foreach(_._1.drawCard())
   }
 
+  def cardUnderMouse(x: Double, y: Double): Option[CardGraphics] = cardPlayed.map(_._1)
+    .reverse
+    .find(_.isMouseOver(x, y))
+
 
 }

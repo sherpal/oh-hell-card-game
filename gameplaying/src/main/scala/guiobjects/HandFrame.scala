@@ -88,6 +88,21 @@ class HandFrame(val player: String, playerClient: PlayerClient, frameWidth: Doub
     }
   }
 
+  private val decoyCard: Button = new Button(this)
+  decoyCard.setPoint(Center)
+  decoyCard.setSize(cardWidth, cardHeight)
+  private val decoyBG: Texture = decoyCard.createTexture()
+  decoyBG.setAllPoints()
+  decoyBG.setTexture(Card.backImageSource)
+  private val decoyVeil: Texture = decoyCard.createTexture(layer = Highlight)
+  decoyVeil.setAllPoints()
+  decoyVeil.setVertexColor(0,0,0,0.5)
+  decoyCard.hide()
+
+  decoyCard.setScript(ScriptKind.OnClick)((_: Frame, _: Double, _: Double, button: Int) => if (button == 0) {
+    val c = playerClient.feelingLucky.center
+    playerClient.feelingLucky.click(c._1, c._2, 0)
+  })
 
   setScript(ScriptKind.OnClick)((_: Frame, x: Double, y: Double, button: Int) => {
     if (button == 0) {
@@ -97,6 +112,10 @@ class HandFrame(val player: String, playerClient: PlayerClient, frameWidth: Doub
         case None =>
       }
     }
+  })
+
+  setScript(ScriptKind.OnMouseMoved)((_: Frame, x: Double, y: Double, _: Double, _: Double, _: Int) => {
+    playerClient.changeLastCardUnderMouse(x, y)
   })
 
   registerEvent(GameEvents.onPlayerPlaysCard)((_: Frame, p: String, _: Card) => {
@@ -109,6 +128,17 @@ class HandFrame(val player: String, playerClient: PlayerClient, frameWidth: Doub
 
   registerEvent(GameEvents.onActionTaken)((_: Frame, state: GameState, _: GameAction) => {
     isPlayerTurn = state.turnOfPlayer._1 == player
+    if (state.nbrCardsDistributed == 1 && player == playerClient.playerName &&
+      !state.playedCards.keys.toSet.contains(player)) {
+      decoyCard.show()
+      if (isPlayerTurn) {
+        decoyVeil.hide()
+      } else {
+        decoyVeil.show()
+      }
+    } else {
+      decoyCard.hide()
+    }
   })
 
   setScript(ScriptKind.OnUIParentResize)((_: Region) => {

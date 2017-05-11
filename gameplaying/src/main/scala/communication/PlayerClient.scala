@@ -3,6 +3,7 @@ package communication
 import gameengine.{Engine, GameState => GameRunner}
 import gamelogic.{PlayingCardState, _}
 import globalvariables.VariableStorage
+import graphics.CardGraphics
 import gui._
 import networkcom._
 import org.scalajs.dom
@@ -31,7 +32,7 @@ class PlayerClient(val playerName: String,
 
   private val handFrame: HandFrame = new HandFrame(playerName, this)
 
-  private val feelingLucky: RandomCardButton = new RandomCardButton(handFrame, this)
+  val feelingLucky: RandomCardButton = new RandomCardButton(handFrame, this)
 
   private val playerFrames: Vector[PlayerFrame] = gameState.players.map(new PlayerFrame(_, this))
   private val trickViewer: LastTrickViewer = new LastTrickViewer(playerFrames.toSet)
@@ -102,6 +103,44 @@ class PlayerClient(val playerName: String,
     })
   }
 
+  private var lastCardUnderMouse: Option[CardGraphics] = None
+
+  private var cardViewer: Option[BrowserWindow] = None
+  private val cardViewerWidth: Int = 300
+  private val cardViewerHeight: Int = 300 * 726 / 500
+
+  private val showCardViewerButton: ShowCardViewer = new ShowCardViewer(this)
+
+  def showCardViewer(): Unit = {
+    cardViewer = Some(new BrowserWindow(new BrowserWindowOptions {
+      override val width: js.UndefOr[Int] = cardViewerWidth
+      override val height: js.UndefOr[Int] = cardViewerHeight
+
+      override val resizable: js.UndefOr[Boolean] = false
+    }))
+
+    cardViewer.get.setMenu(null)
+
+
+    cardViewer.get.loadURL("file://" +
+      Path.join(js.Dynamic.global.selectDynamic("__dirname").asInstanceOf[String], "./cardviewer.html")
+    )
+
+    cardViewer.get.on("close", (_: Event) => {
+      cardViewer = None
+      lastCardUnderMouse = None
+      showCardViewerButton.show()
+    })
+  }
+
+  private def sendCardToViewer(value: Int, color: String): Unit = {
+    cardViewer match {
+      case Some(window) =>
+        window.webContents.send("change-card", value, color)
+      case None =>
+    }
+  }
+
   private val watchingFrame: Frame = new Frame()
   watchingFrame.registerEvent(GameEvents.onActionTaken)((_: Frame, state: GameState, _: GameAction) => {
     state.lastTrick match {
@@ -129,6 +168,32 @@ class PlayerClient(val playerName: String,
         feelingLucky.hide()
     }
   })
+
+  def changeLastCardUnderMouse(x: Double, y: Double): Unit = {
+    val underMouse = (List(
+      TrumpFrame.underMouse(x, y),
+      handFrame.cardUnderMouse(x, y),
+      playTable.cardUnderMouse(x, y)
+    ) ++ playerFrames.map(_.handFrame.cardUnderMouse(x, y))).find(_.isDefined) match {
+      case Some(optionCard) => optionCard
+      case None => None: Option[CardGraphics]
+    }
+    if (underMouse != lastCardUnderMouse) {
+      if (underMouse.isDefined) {
+        lastCardUnderMouse = underMouse
+        sendCardToViewer(underMouse.get.card.value.value, underMouse.get.card.color.color)
+      }
+    }
+  }
+  TrumpFrame.setScript(ScriptKind.OnMouseMoved)((_: Frame, x: Double, y: Double, _: Double, _: Double, _: Int) => {
+    changeLastCardUnderMouse(x, y)
+  })
+  UIParent.setScript(ScriptKind.OnMouseMoved)((_: Frame, x: Double, y: Double, _: Double, _: Double, _: Int) => {
+    changeLastCardUnderMouse(x, y)
+  })
+
+
+
 
 
   def sendPlayCard(p: String, card: Card): Unit = {
@@ -223,6 +288,11 @@ class PlayerClient(val playerName: String,
               .flatMap(elem => List(elem._1, elem._2.toString))
               .toJSArray
           )
+          cardViewer match {
+            case Some(window) =>
+              window.close()
+            case _ =>
+          }
           disconnect()
           dom.window.location.href = "./scoreboard.html"
         } else {

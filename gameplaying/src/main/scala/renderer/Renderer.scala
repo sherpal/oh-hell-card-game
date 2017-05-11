@@ -48,6 +48,8 @@ object Renderer extends JSApp {
         BetWindow
       case "Score Board" =>
         ScoreBoard
+      case "Card Viewer" =>
+        CardViewer
       case _ =>
         println("I should not be here.")
         dom.window.alert("FATAL ERROR: not a correct Html file loading this.")

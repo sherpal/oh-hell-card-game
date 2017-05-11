@@ -67,7 +67,6 @@ class Connection(peer: Peer, socket: Socket, callback: Message => Unit) {
     val msg = Unpickle[InternalMessage](InternalMessage.internalMessagePickler)
       .fromBytes(TypedArrayBuffer.wrap(buffer.buffer))
 
-//    println("the message was " + msg)
 
     msg match {
       case ReliableAck(id) => receivedReliableAck(id)
@@ -96,7 +95,6 @@ class Connection(peer: Peer, socket: Socket, callback: Message => Unit) {
   private def receivedPong(time: Long): Unit = {
     latencyHistory.enqueue((new Date().getTime - time).toInt / 2)
     if (latencyHistory.size > 10) latencyHistory.dequeue
-    //println(s"latency $latency")
   }
 
 

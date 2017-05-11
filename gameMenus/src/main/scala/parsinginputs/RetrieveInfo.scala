@@ -19,6 +19,8 @@ object RetrieveInfo {
 
       if (playerName == "") {
         throw MalformedExpressionInInput("Player name is empty.")
+      } else if (playerName.length > 15) {
+        throw MalformedExpressionInInput("Player name must have 15 characters at most.")
       } else if (gameName == "") {
         throw MalformedExpressionInInput("Game Name is empty.")
       } else if (addressContent == "") {

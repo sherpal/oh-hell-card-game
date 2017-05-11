@@ -72,5 +72,8 @@ trait BrowserWindowOptions extends js.Object {
 
   /** Whether BrowserWindow is modal. Default value: false. */
   val modal: js.UndefOr[Boolean] = js.undefined
+
+  /** Whether BrowserWindow is resizable. Default value: true. */
+  val resizable: js.UndefOr[Boolean] = js.undefined
 }
 

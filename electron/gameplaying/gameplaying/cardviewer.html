@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Card Viewer</title>
+</head>
+<body>
+<img id="card" style="position: fixed; left: 0px; top: 0px;" src="../../card_images/back.png">
+<script>
+    const fs = require('fs')
+    const path = require('path')
+    if (fs.existsSync(path.join(__dirname, "../js-files/gameplaying-opt.js"))) {
+        const ScalaJS = require("../js-files/gameplaying-opt.js")
+    } else if (fs.existsSync(path.join(__dirname, "../js-files/gameplaying-fastopt.js"))) {
+        const ScalaJS = require("../js-files/gameplaying-fastopt.js")
+    } else {
+        console.error("compiled files not found")
+    }
+</script>
+</body>
+</html>

@@ -38,7 +38,15 @@ object TrumpFrame extends Frame(UIParent) {
 
   def setTrumpCard(card: Card): Unit = {
     cardGraphics = Some(new CardGraphics(card))
+    cardGraphics.get.setCenter(center._1, center._2)
+    cardGraphics.get.setWidth(cardWidth)
+    cardGraphics.get.setHeight(cardWidth / 500 * 726)
     cardImage.setTexture(Some(cardGraphics.get.image))
+  }
+
+  def underMouse(x: Double, y: Double): Option[CardGraphics] = cardGraphics match {
+    case Some(card) if card.isMouseOver(x, y) => Some(card)
+    case _ => None
   }
 
   registerEvent(GameEvents.onChooseTrump)((_: Frame, card: Card) => {setTrumpCard(card)})
