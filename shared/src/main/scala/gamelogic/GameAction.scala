@@ -16,7 +16,7 @@ trait GameAction {
 case class PlayCard(player: String, card: Card) extends GameAction {
 
   def apply(gameState: GameState): GameState = {
-    val gs = new GameState(
+    new GameState(
       gameState.players,
       gameState.lastTrick,
       gameState.points,
@@ -29,50 +29,6 @@ case class PlayCard(player: String, card: Card) extends GameAction {
       gameState.maxNbrCards,
       gameState.nbrOfPerformedActions + 1
     )
-    if (gs.playedCards.size == gs.players.length) {
-      // need to go to next game hand or deal
-      val winner = gs.currentWinner.get
-      val nextHand = new GameState(
-        gs.players,
-        Some(gs.playedCardsInOrder),
-        gs.points,
-        gs.bets,
-        Map[String, Card](),
-        gs.hands,
-        gs.tricks + (winner._1 -> (gameState.tricks(winner._1) + 1)),
-        gs.trumpCard,
-        gs.nbrCardsDistributed,
-        gs.maxNbrCards,
-        gs.nbrOfPerformedActions
-      )
-      if (nextHand.hands.values.forall(_.isEmpty)) { // the deal ended
-        val newMaxNbr = if (nextHand.nbrCardsDistributed == nextHand.maxNbrCards) 0 else nextHand.maxNbrCards
-        val newNbrCards = if (nextHand.nbrCardsDistributed >= newMaxNbr)
-          nextHand.nbrCardsDistributed - 1 else nextHand.nbrCardsDistributed + 1
-        new GameState(
-          nextHand.players.tail :+ nextHand.players.head,
-          None,
-          nextHand.players.map(player => {
-            (player, nextHand.points(player) + (if (nextHand.bets(player) == nextHand.tricks(player))
-              nextHand.tricks(player) + 10
-            else
-              -math.abs(nextHand.tricks(player) - nextHand.bets(player))))
-          }).toMap,
-          Map[String, Int](),
-          Map[String, Card](),
-          Map[String, Set[Card]](),
-          Map[String, Int](),
-          None,
-          newNbrCards,
-          newMaxNbr,
-          nextHand.nbrOfPerformedActions
-        )
-      } else {
-        nextHand
-      }
-    } else {
-      gs
-    }
   }
 
 
@@ -81,17 +37,80 @@ case class PlayCard(player: String, card: Card) extends GameAction {
   )
 }
 
+case class NewHand() extends GameAction {
+  def apply(gameState: GameState): GameState = {
+    val winner = gameState.currentWinner.get
+    new GameState(
+      gameState.players,
+      Some(gameState.playedCardsInOrder),
+      gameState.points,
+      gameState.bets,
+      Map[String, Card](),
+      gameState.hands,
+      gameState.tricks + (winner._1 -> (gameState.tricks(winner._1) + 1)),
+      gameState.trumpCard,
+      gameState.nbrCardsDistributed,
+      gameState.maxNbrCards,
+      gameState.nbrOfPerformedActions
+    )
+  }
+
+  def toMessage(gameName: String): InGameMessage = NewHandMessage(gameName)
+}
+
+case class NewDeal(successBonus: Int, failurePenalty: Int,
+                  bonusPerTrick: Int, penaltyPerTrick: Int) extends GameAction {
+
+  private def computePoints(bets: Int, tricks: Int): Int = {
+    if (bets == tricks)
+      successBonus + bonusPerTrick * tricks
+    else
+      - failurePenalty - penaltyPerTrick * math.abs(bets - tricks)
+  }
+
+  def apply(gameState: GameState): GameState = {
+    val winner = gameState.currentWinner.get
+    val tricks = gameState.tricks + (winner._1 -> (gameState.tricks(winner._1) + 1))
+    val newMaxNbr = if (gameState.nbrCardsDistributed == gameState.maxNbrCards) 0 else gameState.maxNbrCards
+    val newNbrCards = if (gameState.nbrCardsDistributed >= newMaxNbr)
+      gameState.nbrCardsDistributed - 1 else gameState.nbrCardsDistributed + 1
+
+
+    new GameState(
+      gameState.players.tail :+ gameState.players.head,
+      None,
+      gameState.players.map(player => {
+        (player, gameState.points(player) + computePoints(gameState.bets(player), tricks(player)))
+      }).toMap,
+      Map[String, Int](),
+      Map[String, Card](),
+      Map[String, Set[Card]](),
+      Map[String, Int](),
+      None,
+      newNbrCards,
+      newMaxNbr,
+      gameState.nbrOfPerformedActions
+    )
+  }
+
+  def toMessage(gameName: String): InGameMessage = NewDealMessage(
+    gameName, successBonus, failurePenalty, bonusPerTrick, penaltyPerTrick
+  )
+}
+
 case class BetTrickNumber(player: String, bet: Int) extends GameAction {
 
   def apply(gameState: GameState): GameState = {
+    val bets = gameState.bets + (player -> bet)
+    val tricks = if (bets.size == gameState.players.size) gameState.players.map((_, 0)).toMap else gameState.tricks
     new GameState(
       gameState.players,
       gameState.lastTrick,
       gameState.points,
-      gameState.bets + (player -> bet),
+      bets,
       gameState.playedCards,
       gameState.hands,
-      gameState.tricks,
+      tricks,
       gameState.trumpCard,
       gameState.nbrCardsDistributed,
       gameState.maxNbrCards,
@@ -113,7 +132,7 @@ case class PlayerReceivesHand(player: String, cards: Array[Card]) extends GameAc
       gameState.bets,
       gameState.playedCards,
       gameState.hands + (player -> cards.toSet),
-      gameState.tricks + (player -> 0),
+      gameState.tricks,
       gameState.trumpCard,
       gameState.nbrCardsDistributed,
       gameState.maxNbrCards,

@@ -1,6 +1,6 @@
 package mainprocess
 
-import sharednodejsapis.{BrowserWindowOptions, Path}
+import sharednodejsapis._
 
 import scala.scalajs.js.{JSApp, UndefOr}
 import electron.{App, BrowserWindowMainProcess}
@@ -56,6 +56,24 @@ object MainProcess extends JSApp {
     App.on("browser-window-created", (_: Event, window: BrowserWindowMainProcess) => {
       windows += window
       window.on("closed", () => windows -= window)
+    })
+
+    IPCMain.on("testing", (_: IPCMainEvent, a: Any) => {println(a)})
+
+    IPCMain.on("print-to-pdf", (event: IPCMainEvent) => {
+      event.sender.printToPDF(new PrintToPDFOptions {}, (e: js.Error, data: Buffer) => {
+        println(e)
+        val pdfFileName = Path.join(
+          Path.dirname(js.Dynamic.global.myGlobalDirname.asInstanceOf[String]), "../../scoresheet.pdf"
+        )
+        println(pdfFileName)
+        FileSystem.writeFile(pdfFileName, data, (error: js.Error) => {
+          println(error)
+        })
+        ElectronShell.openExternal(pdfFileName)
+      })
+
+      event.sender.send("printed")
     })
   }
 }

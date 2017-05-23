@@ -18,7 +18,7 @@ When a deal starts, each player bets on the number of tricks they will take. The
 
 ### Points
 
-Add the end of each deal, players win or lose points according to whether they manage to fulfil their contract.
+At the end of each deal, players win or lose points according to whether they manage to fulfil their contract.
 - if a player does as forecast, they get 10 points plus the number of won tricks
 - if a player does not, they loses the absolute value of the difference between their bet, and the actual number of tricks they managed to take.
 
@@ -67,5 +67,5 @@ The GUI is currently utterly ugly, but this comes from my lack of artistic fiber
 - allow to save and load games
 - when it is the 1 card deal, show a decoy card to click on when it's your turn (done)
 - drag cards on the table instead of clicking on them in order to play them (?)
-- in game chat
-
+- in game chat (very modest first implementation)
+- insert version control

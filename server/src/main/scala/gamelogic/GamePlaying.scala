@@ -97,6 +97,13 @@ class GamePlaying(val gameName: String, val password: Int,
             performAction()
           }
         }
+
+      case InGameChatMessage(g, s, _, p) =>
+        if (s.trim != "") {
+          // the time of the message is the instant at which the server receives it
+          broadcastReliable(InGameChatMessage(g, s, new java.util.Date().getTime, p))
+        }
+
       case _ =>
         println(s"Unknown message: $message")
     }
@@ -126,38 +133,64 @@ class GamePlaying(val gameName: String, val password: Int,
     PlayerReceivesHand(player, remaining.take(gameState.nbrCardsDistributed).toArray)
   }
 
+  /**
+   * These four numbers are used to count points during the game.
+   * In a future version, maybe we'll allow the game host to chose these numbers in order to customize the game further.
+   */
+  private val successBonus: Int = 10
+  private val failurePenalty: Int = 0
+  private val bonusPerTrick: Int = 1
+  private val penaltyPerTrick: Int = 1
+
   private def chooseTrump(gameState: GameState): GameAction = ChooseTrump(remainingCards(gameState).head)
 
   private def performAction(gameState: GameState = currentGameState): Unit = {
     gameState.state match {
       case GameEnded =>
         println(s"Game has ended, winner is ${gameState.points.toList.maxBy(_._2)._1}")
-        setTimeout(3000) {
+        setTimeout(1000) {
           closeGame("gameEndedNormally")
         }
 
       case DistributingCardState =>
         val action = givePlayerAHand(gameState.players.filterNot(gameState.hands.keys.toSet.contains).head, gameState)
         val nbrCardsDistributed = gameState.nbrCardsDistributed
+        actions :+= action
         if (nbrCardsDistributed > 1) {
           server.sendOrderedReliable(action.toMessage(gameName), playersWithPeers(action.player))
         } else {
           broadcastOrderedReliableButOne(action.toMessage(gameName), action.player)
         }
-        actions :+= action
         setTimeout(500) {performAction(action(gameState))}
 
       case ChoosingTrumpState =>
         val action = chooseTrump(gameState)
-        broadcastOrderedReliable(action.toMessage(gameName))
         actions :+= action
-        setTimeout(500) {performAction(action(gameState))}
+        broadcastOrderedReliable(action.toMessage(gameName))
+        performAction(action(gameState))
 
       case BettingState =>
         shuffleCards() // shuffling, BettingState means that distributing is over, so we can shuffle.
         // we do nothing as we should wait for player input
       case PlayingCardState =>
         // we do nothing as we should wait for player input
+      case NewDealState =>
+        setTimeout(4000) {
+          val action = NewDeal(successBonus, failurePenalty, bonusPerTrick, penaltyPerTrick)
+          actions :+= action
+          broadcastOrderedReliable(action.toMessage(gameName))
+          setTimeout(500) {
+            performAction(action(gameState))
+          }
+        }
+      case NewHandState =>
+        setTimeout(2000) {
+          actions :+= NewHand()
+          broadcastOrderedReliable(NewHand().toMessage(gameName))
+          setTimeout(500) {
+            performAction(NewHand()(gameState))
+          }
+        }
     }
   }
 

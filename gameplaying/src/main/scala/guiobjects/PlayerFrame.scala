@@ -50,6 +50,10 @@ class PlayerFrame(val player: String, playerClient: PlayerClient) extends Frame(
   placeInTrick.setSize(20, 20)
   placeInTrick.setText("")
   placeInTrick.setTextColor(0,0,0)
+
+  /**
+   * Used when hovering "View Last Trick" button.
+   */
   def setPlaceInTrickTextAndShow(t: String, visible: Boolean): Unit = {
     placeInTrick.setText(t)
     if (visible) placeInTrick.show() else placeInTrick.hide()
@@ -63,8 +67,8 @@ class PlayerFrame(val player: String, playerClient: PlayerClient) extends Frame(
     PlayerFrame.frontColor._1, PlayerFrame.frontColor._2, PlayerFrame.frontColor._3
   )
   private def setTrickText(gameState: GameState = playerClient.currentGameState): Unit =
-    tricks.setText(s"${gameState.tricks.getOrElse(player, 0)} / " +
-      s"${gameState.bets.getOrElse(player, "NA")}")
+    tricks.setText(s"${gameState.tricks.getOrElse(player, "")} / " +
+      s"${gameState.bets.getOrElse(player, "")}")
 
 
   def colorFocus(flag: Boolean): Unit = {

@@ -1,5 +1,6 @@
 package communication
 
+import chat.ChatHandler
 import gameengine.{Engine, GameState => GameRunner}
 import gamelogic.{PlayingCardState, _}
 import globalvariables.VariableStorage
@@ -7,12 +8,14 @@ import graphics.CardGraphics
 import gui._
 import networkcom._
 import org.scalajs.dom
-import org.scalajs.dom.{Event, html}
+import org.scalajs.dom.html
 import guiobjects._
+import org.scalajs.dom.raw.{BeforeUnloadEvent, Event}
 import sharednodejsapis._
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.timers.setTimeout
 
 
 
@@ -27,6 +30,54 @@ class PlayerClient(val playerName: String,
                   val gameState: GameState) extends Client {
 
   connect()
+
+
+  val canvas: html.Canvas = dom.document.getElementById("canvas").asInstanceOf[html.Canvas]
+  val gameInterface: html.Div = dom.document.getElementById("gameInterface").asInstanceOf[html.Div]
+  val chatContainer: html.Div = dom.document.getElementById("chat").asInstanceOf[html.Div]
+
+  def updateSize(): Unit = {
+
+    gameInterface.style.width = dom.window.innerWidth.toInt.toString + "px"
+    gameInterface.style.height = dom.window.innerHeight.toInt.toString + "px"
+    chatContainer.style.height = (dom.window.innerHeight.toInt - 10).toString + "px"
+    canvas.width = dom.window.innerWidth.toInt - 300
+    canvas.height = dom.window.innerHeight.toInt - 10
+    UIParent.resize()
+
+    // these funny three next lines come from
+    // http://stackoverflow.com/questions/23474191/flexbox-height-not-updating-when-content-changes
+    gameInterface.style.display = "none"
+    gameInterface.offsetHeight
+    gameInterface.style.display = "flex"
+  }
+
+  val updateSizeJS: js.Function1[Event, Unit] = (_: Event) => updateSize()
+
+  dom.window.addEventListener("resize", updateSizeJS)
+  BrowserWindow.fromId(VariableStorage.retrieveValue("windowId").asInstanceOf[Int]).on(
+    "maximize", (_: Event) => {
+      setTimeout(100) {
+        updateSize()
+      }
+    }
+  )
+  BrowserWindow.fromId(VariableStorage.retrieveValue("windowId").asInstanceOf[Int]).on(
+    "unmaximize", (_: Event) => {
+      setTimeout(100) {
+        updateSize()
+      }
+    }
+  )
+
+
+  private val chatHandler: ChatHandler[InGameChatMessage] = new ChatHandler[InGameChatMessage](
+    playerName,
+    dom.document.getElementById("chatInput").asInstanceOf[html.Input],
+    dom.document.getElementById("chatMessageContainer").asInstanceOf[html.Div],
+    this,
+    InGameChatMessage(gameName, _, new java.util.Date().getTime, playerName)
+  )
 
   private var gameActions: List[GameAction] = Nil
 
@@ -51,7 +102,16 @@ class PlayerClient(val playerName: String,
   if (scala.scalajs.LinkingInfo.developmentMode) GameLogs
 
   private def gameStarts(): Unit = {
-    dom.document.getElementById("canvas").asInstanceOf[html.Canvas].style.visibility = "visible"
+    val gameInterface: html.Div = dom.document.getElementById("gameInterface").asInstanceOf[html.Div]
+    gameInterface.style.visibility = "visible"
+//    gameInterface.style.width = dom.window.innerWidth.toString
+//    gameInterface.style.height = dom.window.innerHeight.toString
+//    val canvas: html.Canvas = dom.document.getElementById("canvas").asInstanceOf[html.Canvas]
+//    canvas.width = dom.window.innerWidth.toInt - 300
+//    canvas.height = dom.window.innerHeight.toInt - 10
+//    UIParent.resize()
+    updateSize()
+
     dom.document.getElementById("waitingPlayersTitle").asInstanceOf[html.Heading].style.visibility = "hidden"
     dom.document.getElementById("waitingPlayersTitle").asInstanceOf[html.Heading].style.position = "absolute"
     dom.document.getElementById("waitingPlayers").asInstanceOf[html.Div].style.visibility = "hidden"
@@ -110,7 +170,6 @@ class PlayerClient(val playerName: String,
   private val cardViewerHeight: Int = 300 * 726 / 500
 
   private val showCardViewerButton: ShowCardViewer = new ShowCardViewer(this)
-
   def showCardViewer(): Unit = {
     cardViewer = Some(new BrowserWindow(new BrowserWindowOptions {
       override val width: js.UndefOr[Int] = cardViewerWidth
@@ -120,7 +179,6 @@ class PlayerClient(val playerName: String,
     }))
 
     cardViewer.get.setMenu(null)
-
 
     cardViewer.get.loadURL("file://" +
       Path.join(js.Dynamic.global.selectDynamic("__dirname").asInstanceOf[String], "./cardviewer.html")
@@ -142,30 +200,36 @@ class PlayerClient(val playerName: String,
   }
 
   private val watchingFrame: Frame = new Frame()
-  watchingFrame.registerEvent(GameEvents.onActionTaken)((_: Frame, state: GameState, _: GameAction) => {
-    state.lastTrick match {
+  watchingFrame.registerEvent(GameEvents.onActionTaken)((_: Frame, gameState: GameState, action: GameAction) => {
+    gameState.lastTrick match {
       case Some(_) => trickViewer.show()
       case None => trickViewer.hide()
     }
 
-    state.state match {
+    val state = gameState.state
+
+    state match {
       case BettingState =>
-        if (state.turnOfPlayer._1 == playerName) {
-          showBetWindow(state)
+        if (gameState.turnOfPlayer._1 == playerName) {
+          showBetWindow(gameState)
         }
-        ScoreBoard.setPlayerNames(state.points)
+        ScoreBoard.setPlayerNames(gameState.points)
       case _ =>
     }
 
-    state.state match {
+    state match {
       case PlayingCardState =>
-        if (state.turnOfPlayer._1 == playerName) {
+        if (gameState.turnOfPlayer._1 == playerName) {
           feelingLucky.show()
         } else {
           feelingLucky.hide()
         }
       case _ =>
         feelingLucky.hide()
+    }
+
+    if (action.isInstanceOf[NewDeal]) {
+      sendScoreHistory()
     }
   })
 
@@ -193,6 +257,114 @@ class PlayerClient(val playerName: String,
   })
 
 
+  /**
+   * Creates the necessary innerHtml needed for the score history.
+   */
+  def scoreHistoryInnerHTML: String = {
+    case class PointInfo(player: String, bets: Int, tricks: Int, pointsWon: Int, totalPoints: Int)
+
+    val allStates = gameActions.scanLeft(gameState)({case (gs, a) => a(gs)}).tail
+    val pointsInfo: List[(Int, List[PointInfo])] = allStates
+      .zip(allStates.tail)
+      .zip(gameActions.tail)
+      .filter(_._2.isInstanceOf[NewDeal])
+      .unzip._1
+      .map({case (state1, state2) =>
+        // applying a new hand to compute the tricks
+        val state = NewHand()(state1)
+        (state1.nbrCardsDistributed, gameState.players.toList.map(player => PointInfo(
+          player,
+          state.bets(player), state.tricks(player),
+          state2.points(player) - state.points(player), state2.points(player)
+        )))
+    })
+
+    if (scala.scalajs.LinkingInfo.developmentMode)
+      println(pointsInfo.map(_._2.mkString(", ")).mkString("\n"))
+
+    val playerInfoWidth: Int = 95 / gameState.players.length
+    val betTricksWonWidth: Int = playerInfoWidth * 20 / 100
+    val pointsWidth: Int = playerInfoWidth - 3 * betTricksWonWidth
+    val nbrCardsDistributedWidth = 100 - (pointsWidth + 3 * betTricksWonWidth) * gameState.players.length
+
+    "<colgroup>\n<col style=\"border: 1px solid black; width: " + nbrCardsDistributedWidth + "%\">\n" +
+      ((("<col style=\"border: 1px solid black; width: " + betTricksWonWidth + "%\">\n") * 3 +
+        "<col style=\"border: 1px solid black; width: " + pointsWidth + "%\">\n") * gameState.players.length) +
+      "</colgroup>\n" +
+    "<thead>\n" +
+    "<tr class=\"success\">\n<th>#</th>\n" +
+      gameState.players.map("<th colspan=\"4\">" + _ + "</th>").mkString("\n") +
+    "\n</tr>\n" +
+      "<tr>\n<th></th>\n" +
+      ("<th align=\"right\">B</th><th align=\"right\">T</th><th>W</th><th align=\"right\">Points</th>\n" *
+        gameState.players.length) +
+    "</tr>\n" +
+      "</thead>\n<tbody>\n<tr>\n<td></td>" +
+    gameState.players
+      .map(("<td></td>" * 3) +
+        "<td style=\"font-size: 140%\" align=\"right\" bgcolor=\"#E52617\"><font color=\"#FFFFFF\">" +
+        gameState.points(_) + "</font></td>").mkString("\n") +
+    "</tr>\n" +
+    pointsInfo.map({case (nbrCards, list) =>
+      "<tr>\n" +
+      "<td>" + nbrCards + "</td>" +
+      list.map(info => {
+        "<td style=\"valign: middle\" align=\"right\">" + info.bets +
+          "</td><td style=\"valign: middle\" align=\"right\">" + info.tricks +
+          "</td><td style=\"valign: middle\" align=\"right\">" + info.pointsWon + "</td>" +
+          "<td style=\"font-size: 140%; valign: middle\" bgcolor=\"#E52617\" align=\"right\">" +
+          "<font color=\"#FFFFFF\">" + info.totalPoints + "</font></td>"
+      }).mkString("\n") +
+      "\n</tr>"
+    }).mkString("\n") +
+    "\n</tbody>"
+  }
+
+  private var scoreHistoryWindow: Option[BrowserWindow] = None
+  private val scoreHistoryButton: ScoreHistoryButton = new ScoreHistoryButton(this, showCardViewerButton)
+  private val scoreHistoryCloseHandler: js.Function1[Event, Unit] = (_: Event) => {
+    try {
+      scoreHistoryWindow = None
+      scoreHistoryButton.show()
+    } catch {
+      case _: Throwable =>
+    }
+  }
+
+  private def removeCloseHistoryHandler(): Unit = scoreHistoryWindow match {
+    case Some(window) => window.removeAllListeners("close")
+    case None =>
+  }
+
+
+  def sendScoreHistory(): Unit = scoreHistoryWindow match {
+    case Some(window) => window.webContents.send("send-info", scoreHistoryInnerHTML)
+    case None =>
+  }
+
+  def showScoreHistoryWindow(): Unit = if (scoreHistoryWindow.isEmpty) {
+    // adding an event on the main browser window to remove the previous event.
+    // if we don't do that, and the main window gets close before the score board, it creates an error in the main
+    // process, which we absolutely don't want.
+    dom.window.onbeforeunload = (_: BeforeUnloadEvent) => {
+      removeCloseHistoryHandler()
+    }
+
+    scoreHistoryWindow = Some(new BrowserWindow(new BrowserWindowOptions {}))
+
+    scoreHistoryWindow.get.setMenu(null)
+
+    scoreHistoryWindow.get.loadURL("file://" +
+      Path.join(js.Dynamic.global.selectDynamic("__dirname").asInstanceOf[String], "./scorehistory.html")
+    )
+
+    scoreHistoryWindow.get.on("close", scoreHistoryCloseHandler)
+
+    if (scala.scalajs.LinkingInfo.developmentMode)
+      scoreHistoryWindow.get.webContents.openDevTools()
+
+    scoreHistoryWindow.get.webContents.on("did-finish-load", () => sendScoreHistory())
+  }
 
 
 
@@ -246,20 +418,20 @@ class PlayerClient(val playerName: String,
     msg match {
       case PlayCardMessage(_, player, cardMessage) =>
         val action = PlayCard(player, cardMessage2Card(cardMessage))
-        gameActions = gameActions :+ action
+        gameActions :+= action
         ScriptObject.firesEvent(GameEvents.onPlayerPlaysCard)(player, cardMessage2Card(cardMessage))
         ScriptObject.firesEvent(GameEvents.onActionTaken)(currentGameState, action)
 
       case BetTrickNumberMessage(_, player, bet) =>
         val action = BetTrickNumber(player, bet)
-        gameActions = gameActions :+ action
+        gameActions :+= action
         ScriptObject.firesEvent(GameEvents.onPlayerBets)(player, bet)
         ScriptObject.firesEvent(GameEvents.onActionTaken)(currentGameState, action)
 
       case PlayerReceivesHandMessage(_, player, cardMessages) =>
         val cards = cardMessages.map(cardMessage2Card)
         val action = PlayerReceivesHand(player, cards)
-        gameActions = gameActions :+ action
+        gameActions :+= action
         val state = currentGameState
         ScriptObject.firesEvent(GameEvents.onPlayerReceivesHand)(player, cards.toList)
         ScriptObject.firesEvent(GameEvents.onActionTaken)(state, action)
@@ -268,9 +440,27 @@ class PlayerClient(val playerName: String,
         val current = currentGameState
         val fillingHandActions = fillEmptyHands(current)
         val action = ChooseTrump(cardMessage2Card(trumpCard))
-        gameActions = gameActions :+ action
+        gameActions :+= action
         ScriptObject.firesEvent(GameEvents.onChooseTrump)(cardMessage2Card(trumpCard))
         ScriptObject.firesEvent(GameEvents.onActionTaken)(current(fillingHandActions :+ action), action)
+
+      case NewHandMessage(_) =>
+        val current = currentGameState
+        val action = NewHand()
+        gameActions :+= action
+        ScriptObject.firesEvent(GameEvents.onNewHand)
+        ScriptObject.firesEvent(GameEvents.onActionTaken)(action(current), action)
+
+      case NewDealMessage(_, successBonus, failurePenalty, bonusPerTrick, penaltyPerTrick) =>
+        val action = NewDeal(successBonus, failurePenalty, bonusPerTrick, penaltyPerTrick)
+        gameActions :+= action
+        val current = currentGameState
+        ScriptObject.firesEvent(GameEvents.onNewDeal)(successBonus, failurePenalty, bonusPerTrick, penaltyPerTrick)
+        ScriptObject.firesEvent(GameEvents.onActionTaken)(current, action)
+        if (current.state == GameEnded) {
+          showCardViewerButton.hide()
+          scoreHistoryButton.hide()
+        }
 
       case GameStarts(_, _) =>
         gameStarts()
@@ -279,6 +469,15 @@ class PlayerClient(val playerName: String,
         println(s"still waiting for $n players")
 
       case ClosingGame(_, message) =>
+        cardViewer match {
+          case Some(window) =>
+            window.close()
+          case _ =>
+        }
+
+        removeCloseHistoryHandler()
+        dom.window.onbeforeunload = null
+
         if (message == "gameEndedNormally") {
           VariableStorage.storeValue(
             "endGamePoints",
@@ -288,17 +487,15 @@ class PlayerClient(val playerName: String,
               .flatMap(elem => List(elem._1, elem._2.toString))
               .toJSArray
           )
-          cardViewer match {
-            case Some(window) =>
-              window.close()
-            case _ =>
-          }
           disconnect()
           dom.window.location.href = "./scoreboard.html"
         } else {
           dom.window.alert(message)
           dom.window.location.href = "../../gamemenus/mainscreen/mainscreen.html"
         }
+
+      case m: InGameChatMessage =>
+        chatHandler.receivedChatMessage(m)
 
       case _ =>
         println(s"Unknown message: $msg")
@@ -308,6 +505,9 @@ class PlayerClient(val playerName: String,
   override def connectedCallback(client: Client, peer: Peer, connected: Boolean): Unit = {
     if (connected) {
       sendReliable(PlayerConnecting(gameName, playerName, password))
+    } else if (currentGameState.state != GameEnded) {
+      dom.window.alert("You have been disconnected from the server.")
+      dom.window.location.href = "../../gamemenus/mainscreen/mainscreen.html"
     }
   }
 

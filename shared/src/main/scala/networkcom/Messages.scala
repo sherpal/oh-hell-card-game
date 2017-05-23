@@ -35,16 +35,22 @@ object Message {
     .addConcreteType[NbrCardsInHand]
     .addConcreteType[DeckMessage]
 
+    .addConcreteType[GameCreationChatMessage]
+
     .addConcreteType[PlayerConnecting]
     .addConcreteType[StillWaitingForPlayers]
     .addConcreteType[GameStarts]
     .addConcreteType[CardMessage]
 
     .addConcreteType[PlayCardMessage]
+    .addConcreteType[NewHandMessage]
+    .addConcreteType[NewDealMessage]
     .addConcreteType[PlayRandomCard]
     .addConcreteType[BetTrickNumberMessage]
     .addConcreteType[PlayerReceivesHandMessage]
     .addConcreteType[ChooseTrumpMessage]
+
+    .addConcreteType[InGameChatMessage]
 
     .addConcreteType[ClosingGame]
 
@@ -59,6 +65,14 @@ final case class Disconnected() extends Message
 final case class TestMessage(s: String) extends Message
 final case class TestSendArray(strings: Array[String]) extends Message
 final case class ChatMessage(s: String, time: Long, sender: String) extends Message
+
+
+trait ChatMessageType extends Message {
+  val gameName: String
+  val time: Long
+  val s: String
+  val sender: String
+}
 
 /**
  * These messages are sent in the GameMenu, while someone wants either to host a game, or to join one.
@@ -86,6 +100,8 @@ final case class NewPlayer(gameName: String, playerName: String, reservationId: 
 final case class CurrentPlayers(gameId: Long, playerNames: Array[String]) extends GameCreationMessage
 final case class NbrCardsInHand(gameName: String, n: Int) extends GameCreationMessage
 final case class DeckMessage(gameName: String, cardsPerColor: Int, colors: Int) extends GameCreationMessage
+final case class GameCreationChatMessage(gameName: String, s: String, time: Long, sender: String)
+  extends GameCreationMessage with ChatMessageType
 
 /**
  * These messages are sent during the game.
@@ -100,6 +116,9 @@ final case class GameStarts(gameName: String, nbrCardsInHand: Int) extends InGam
 final case class CardMessage(value: Int, color: String) extends Message
 
 final case class PlayCardMessage(gameName: String, playerName: String, card: CardMessage) extends InGameMessage
+final case class NewHandMessage(gameName: String) extends InGameMessage
+final case class NewDealMessage(gameName: String, successBonus: Int, failurePenalty: Int,
+                               bonusPerTrick: Int, penaltyPerTrick: Int) extends InGameMessage
 final case class PlayRandomCard(gameName: String, playerName: String) extends InGameMessage
 final case class BetTrickNumberMessage(gameName: String, playerName: String, bet: Int) extends InGameMessage
 final case class PlayerReceivesHandMessage(gameName: String, playerName: String, cards: Array[CardMessage]) extends
@@ -107,6 +126,9 @@ InGameMessage
 final case class ChooseTrumpMessage(gameName: String, card: CardMessage) extends InGameMessage
 
 final case class ClosingGame(gameName: String, msg: String) extends InGameMessage
+
+final case class InGameChatMessage(gameName: String, s: String, time: Long, sender: String)
+  extends InGameMessage with ChatMessageType
 
 final case class GameStateMessage(
                                  players: Vector[String],

@@ -2,7 +2,6 @@ package sharednodejsapis
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSImport, ScalaJSDefined}
-import scala.scalajs.js.|
 
 
 @js.native
@@ -13,7 +12,6 @@ class BrowserWindow(options: BrowserWindowOptions) extends EventEmitter {
   val webContents: WebContents = js.native
 
   val id: Integer = js.native
-
 
   def close(): Unit = js.native
 

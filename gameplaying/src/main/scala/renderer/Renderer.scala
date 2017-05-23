@@ -2,14 +2,17 @@ package renderer
 
 import communication.PlayerClient
 import gamelogic.GameState
+import globalvariables.VariableStorage
 
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
+import scala.scalajs.js.timers.setTimeout
 import globalvariables.VariableStorage.retrieveValue
 import gui.UIParent
 import org.scalajs.dom
 import org.scalajs.dom.html
 import org.scalajs.dom.raw.Event
+import sharednodejsapis.BrowserWindow
 
 object Renderer extends JSApp {
   def main(): Unit = {
@@ -27,17 +30,11 @@ object Renderer extends JSApp {
           val players: Vector[String] = retrieveValue("players").asInstanceOf[js.Array[String]].toVector
           val maxNbrOfCards: Int = retrieveValue("maxNbrCards").asInstanceOf[Int]
 
+
           playerClient = Some(new PlayerClient(
             playerName, gameName, address, port, password, GameState.originalState(players, maxNbrOfCards)
           ))
 
-
-          val canvas: html.Canvas = dom.document.getElementById("canvas").asInstanceOf[html.Canvas]
-          dom.window.addEventListener("resize", (_: Event) => {
-            canvas.width = dom.window.innerWidth.toInt - 10
-            canvas.height = dom.window.innerHeight.toInt - 10
-            UIParent.resize()
-          })
         } catch {
           case e: Throwable =>
             e.printStackTrace()
@@ -50,6 +47,8 @@ object Renderer extends JSApp {
         ScoreBoard
       case "Card Viewer" =>
         CardViewer
+      case "Score History" =>
+        ScoreHistory
       case _ =>
         println("I should not be here.")
         dom.window.alert("FATAL ERROR: not a correct Html file loading this.")

@@ -22,5 +22,11 @@ class ShowCardViewer(playerClient: PlayerClient) extends Button(UIParent) {
   bg.setAllPoints()
   bg.setVertexColor(0,0,0)
 
+  private val border = createTexture(layer = Highlight)
+  border.setMode(LineMode)
+  border.lineWidth = 2
+  border.setAllPoints()
+  border.setVertexColor(1,1,1)
+
 
 }

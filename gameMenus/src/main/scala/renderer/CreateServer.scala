@@ -19,7 +19,7 @@ object CreateServer {
     VariableStorage.storeGlobalValue("serverPort", port.toString)
 
     val win = new BrowserWindow(new BrowserWindowOptions {
-      override val width: js.UndefOr[Int] = 1200
+      override val width: js.UndefOr[Int] = 600
       override val height: js.UndefOr[Int] = 600
     })
     win.loadURL("file://" +

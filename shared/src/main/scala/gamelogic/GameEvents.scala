@@ -25,6 +25,12 @@ object GameEvents {
   val onPlayersStartBets: ScriptKind { type Handler = (Frame) => Unit } =
     ScriptKind.makeEvent[(Frame) => Unit]
 
+  val onNewHand: ScriptKind { type Handler = (Frame) => Unit } =
+    ScriptKind.makeEvent[(Frame) => Unit]
+
+  val onNewDeal: ScriptKind { type Handler = (Frame, Int, Int, Int, Int) => Unit } =
+    ScriptKind.makeEvent[(Frame, Int, Int, Int, Int) => Unit]
+
   val onActionTaken: ScriptKind { type Handler = (Frame, GameState, GameAction) => Unit } =
     ScriptKind.makeEvent[(Frame, GameState, GameAction) => Unit]
 }

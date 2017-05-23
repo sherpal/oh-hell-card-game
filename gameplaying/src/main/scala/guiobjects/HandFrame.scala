@@ -48,10 +48,10 @@ class HandFrame(val player: String, playerClient: PlayerClient, frameWidth: Doub
       card.setHeight(cardHeight)
     })
     val nbrOfCards = cardsToPlace.length
-    val spaceBetweenCards = if (nbrOfCards * cardWidth < this.width)
+    val spaceBetweenCards = if (nbrOfCards == 1 || nbrOfCards * cardWidth < this.width - 10)
       cardWidth
     else
-      (this.width - cardWidth) / (nbrOfCards - 1)
+      (this.width - 10 - cardWidth) / (nbrOfCards - 1)
 
     val startingAbscissa = this.center._1 - spaceBetweenCards / 2 * (nbrOfCards - 1)
     cardsToPlace.zipWithIndex.foreach({

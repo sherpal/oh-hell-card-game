@@ -59,19 +59,19 @@ class PlayTable(playersInOrder: Vector[PlayerFrame], handFrame: HandFrame, playe
 
   private var cardPlayed: List[(CardGraphics, PlayerFrame)] = Nil
 
-  private var treatingMessage: Boolean = true
+//  private var treatingMessage: Boolean = true
 
   private def addCard(player: String, card: Card): Unit = {
     cardPlayed :+= (allCards.find(_.card == card).get, playersInOrder.find(_.player == player).get)
     cardPlayed = placePlayedCards(cardPlayed)
-    if (cardPlayed.length == playersInOrder.length) {
-      treatingMessage = false
-      setTimeout(2000) {
-        treatingMessage = true
-        cardPlayed = Nil
-        buffer.flush(actionHandler)
-      }
-    }
+//    if (cardPlayed.length == playersInOrder.length) {
+//      treatingMessage = false
+//      setTimeout(2000) {
+//        treatingMessage = true
+//        cardPlayed = Nil
+//        buffer.flush(actionHandler)
+//      }
+//    }
   }
 
   private def placePlayedCards(cardsToPlace: List[(CardGraphics, PlayerFrame)]): List[(CardGraphics, PlayerFrame)] = {
@@ -96,9 +96,15 @@ class PlayTable(playersInOrder: Vector[PlayerFrame], handFrame: HandFrame, playe
   private val helperFrame: Frame = new Frame()
   helperFrame.registerEvent(GameEvents.onPlayerPlaysCard)((_: Frame, player: String, card: Card) => {
     buffer.enqueue(PlayCard(player, card))
-    if (treatingMessage) {
+//    if (treatingMessage) {
       buffer.flush(actionHandler)
-    }
+//    }
+  })
+  helperFrame.registerEvent(GameEvents.onNewHand)((_: Frame) => {
+    cardPlayed = Nil
+  })
+  helperFrame.registerEvent(GameEvents.onNewDeal)((_: Frame, _: Int, _: Int, _: Int, _: Int) => {
+    cardPlayed = Nil
   })
 
 

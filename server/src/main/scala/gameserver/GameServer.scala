@@ -221,6 +221,12 @@ class GameServer(val address: String, val port: Int) extends Server {
           case None =>
         }
 
+      case GameCreationChatMessage(gameName, s, time, p) =>
+        gameIds.get(gameName) match {
+          case Some(id) if games.isDefinedAt(id) =>
+            sendReliableToGameMembers(id, GameCreationChatMessage(gameName, s, time, p))
+          case None =>
+        }
 
       case _ =>
         throw DoesNotManageThisMessage(s"Message class was ${m.getClass}.")

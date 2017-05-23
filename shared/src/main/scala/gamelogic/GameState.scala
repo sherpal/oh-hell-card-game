@@ -81,6 +81,8 @@ class GameState (
   else if (hands.values.size < players.length) DistributingCardState
   else if (trumpCard.isEmpty) ChoosingTrumpState
   else if (bets.size < players.length) BettingState
+  else if (playedCards.size == players.length && hands.values.forall(_.isEmpty)) NewDealState
+  else if (playedCards.size == players.length) NewHandState
   else PlayingCardState
 
   /**
@@ -116,6 +118,14 @@ class GameState (
         (bets.size < players.length - 1 || bets.values.sum + action.bet != nbrCardsDistributed)
       case _ =>
         false
+    }
+    case NewHandState => {
+      case _: NewHand => true
+      case _ => false
+    }
+    case NewDealState => {
+      case _: NewDeal => true
+      case _ => false
     }
     case PlayingCardState => {
       case action: PlayCard =>
@@ -158,21 +168,36 @@ class GameState (
 
 
   // true if it is betting stage, false if it is playing card stage
-  def turnOfPlayer: (String, Boolean) = if (bets.size == players.length) {
-    // bets are finished, playing card stage
-
-    val nbrPlayedCards = playedCards.size
-    lastWinner match {
-      case Some(player) =>
-        val idx = players.indexOf(player)
-        (players((idx + nbrPlayedCards) % players.length), false)
-      case None =>
-        (players(nbrPlayedCards), false)
-    }
-  } else {
-    // betting stage
-    (players(bets.size), true)
+  def turnOfPlayer: (String, Boolean) = state match {
+    case BettingState =>
+      (players(bets.size), true)
+    case PlayingCardState =>
+      val nbrPlayedCards = playedCards.size
+      lastWinner match {
+        case Some(player) =>
+          val idx = players.indexOf(player)
+          (players((idx + nbrPlayedCards) % players.length), false)
+        case None =>
+          (players(nbrPlayedCards), false)
+      }
+    case _ =>
+      ("", false)
   }
+//  if (bets.size == players.length) {
+//    // bets are finished, playing card stage
+//
+//    val nbrPlayedCards = playedCards.size
+//    lastWinner match {
+//      case Some(player) =>
+//        val idx = players.indexOf(player)
+//        (players((idx + nbrPlayedCards) % players.length), false)
+//      case None =>
+//        (players(nbrPlayedCards), false)
+//    }
+//  } else {
+//    // betting stage
+//    (players(bets.size), true)
+//  }
 
   def startingColor: Option[CardColor] = if (playedCards.isEmpty) None else Some(
     playedCardsInOrder.head._2.color
@@ -202,4 +227,6 @@ case object DistributingCardState extends GameStateState
 case object ChoosingTrumpState extends GameStateState
 case object BettingState extends GameStateState
 case object PlayingCardState extends GameStateState
+case object NewHandState extends GameStateState
+case object NewDealState extends GameStateState
 case object GameEnded extends GameStateState
