@@ -1,5 +1,6 @@
 package mainprocess
 
+import io.IO
 import sharednodejsapis.{IPCMain, IPCMainEvent, WebContents}
 
 import scala.collection.mutable
@@ -73,6 +74,9 @@ object Storage {
   def storeGlobalVariable(key: String, value: Any): Unit = {
     globalVariables += (key -> value)
   }
+
+  // Storing the base directory immediately
+  storeGlobalVariable("baseDirectory", IO.baseDirectory)
 
   private def retrieveGlobalVariable(key: String): Any = {
     globalVariables.getOrElse(key, null)

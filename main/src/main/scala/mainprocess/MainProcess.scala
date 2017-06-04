@@ -4,6 +4,7 @@ import sharednodejsapis._
 
 import scala.scalajs.js.{JSApp, UndefOr}
 import electron.{App, BrowserWindowMainProcess}
+import io.IO
 import org.scalajs.dom.raw.Event
 
 import scala.collection.mutable
@@ -34,9 +35,7 @@ object MainProcess extends JSApp {
 //      )
 
       win.loadURL(
-        "file://" + Path.join(
-          Path.dirname(js.Dynamic.global.myGlobalDirname.asInstanceOf[String]), "/gamemenus/mainscreen/mainscreen.html"
-        )
+        "file://" + Path.join(IO.baseDirectory, "/gamemenus/mainscreen/mainscreen.html")
       )
 
       if (scala.scalajs.LinkingInfo.developmentMode)
@@ -64,7 +63,7 @@ object MainProcess extends JSApp {
       event.sender.printToPDF(new PrintToPDFOptions {}, (e: js.Error, data: Buffer) => {
         println(e)
         val pdfFileName = Path.join(
-          Path.dirname(js.Dynamic.global.myGlobalDirname.asInstanceOf[String]), "../../scoresheet.pdf"
+          Path.dirname(IO.baseDirectory), "/scoresheet.pdf"
         )
         println(pdfFileName)
         FileSystem.writeFile(pdfFileName, data, (error: js.Error) => {

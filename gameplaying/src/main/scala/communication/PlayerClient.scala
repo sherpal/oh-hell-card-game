@@ -17,6 +17,11 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.timers.setTimeout
 
+/**
+ * DISCLAIMER:
+ * To any one looking at the code of this file, I know that it is a complete mess.
+ * I'll eventually clean that up, when I find the time.
+ */
 
 
 /**
@@ -31,6 +36,16 @@ class PlayerClient(val playerName: String,
 
   connect()
 
+  // adding an event on the main browser window to remove the previous event.
+  // if we don't do that, and the main window gets close before the score board, it creates an error in the main
+  // process, which we absolutely don't want.
+  dom.window.onbeforeunload = (event: BeforeUnloadEvent) => {
+    removeCloseHistoryHandler()
+
+    if (!scala.scalajs.LinkingInfo.developmentMode && !dom.window.confirm("Are you sure you want to quit?")) {
+      event.asInstanceOf[js.Dynamic].returnValue = false
+    }
+  }
 
   val canvas: html.Canvas = dom.document.getElementById("canvas").asInstanceOf[html.Canvas]
   val gameInterface: html.Div = dom.document.getElementById("gameInterface").asInstanceOf[html.Div]
@@ -86,7 +101,7 @@ class PlayerClient(val playerName: String,
   val feelingLucky: RandomCardButton = new RandomCardButton(handFrame, this)
 
   private val playerFrames: Vector[PlayerFrame] = gameState.players.map(new PlayerFrame(_, this))
-  private val trickViewer: LastTrickViewer = new LastTrickViewer(playerFrames.toSet)
+  private val trickViewer: LastTrickViewer = new LastTrickViewer(playerFrames.toSet, handFrame)
 
   private val playTable: PlayTable = new PlayTable(playerFrames, handFrame, this)
 
@@ -104,12 +119,6 @@ class PlayerClient(val playerName: String,
   private def gameStarts(): Unit = {
     val gameInterface: html.Div = dom.document.getElementById("gameInterface").asInstanceOf[html.Div]
     gameInterface.style.visibility = "visible"
-//    gameInterface.style.width = dom.window.innerWidth.toString
-//    gameInterface.style.height = dom.window.innerHeight.toString
-//    val canvas: html.Canvas = dom.document.getElementById("canvas").asInstanceOf[html.Canvas]
-//    canvas.width = dom.window.innerWidth.toInt - 300
-//    canvas.height = dom.window.innerHeight.toInt - 10
-//    UIParent.resize()
     updateSize()
 
     dom.document.getElementById("waitingPlayersTitle").asInstanceOf[html.Heading].style.visibility = "hidden"
@@ -136,15 +145,13 @@ class PlayerClient(val playerName: String,
   private def showBetWindow(gameState: GameState): Unit = {
     val betWindow: BrowserWindow = new BrowserWindow(new BrowserWindowOptions {
       override val width: js.UndefOr[Int] = 350
-      override val height: js.UndefOr[Int] = 200
+      override val height: js.UndefOr[Int] = 220
 
       override val frame: js.UndefOr[Boolean] = false
 
       override val parent: js.UndefOr[BrowserWindow] = BrowserWindow.fromId(
         VariableStorage.retrieveValue("windowId").asInstanceOf[Int]
       )
-
-      override val modal: js.UndefOr[Boolean] = true
     })
     betWindow.loadURL("file://" +
       Path.join(js.Dynamic.global.selectDynamic("__dirname").asInstanceOf[String], "./bets.html")
@@ -321,7 +328,7 @@ class PlayerClient(val playerName: String,
   }
 
   private var scoreHistoryWindow: Option[BrowserWindow] = None
-  private val scoreHistoryButton: ScoreHistoryButton = new ScoreHistoryButton(this, showCardViewerButton)
+  private val scoreHistoryButton: ScoreHistoryButton = new ScoreHistoryButton(this, ScoreBoard)
   private val scoreHistoryCloseHandler: js.Function1[Event, Unit] = (_: Event) => {
     try {
       scoreHistoryWindow = None
@@ -343,12 +350,6 @@ class PlayerClient(val playerName: String,
   }
 
   def showScoreHistoryWindow(): Unit = if (scoreHistoryWindow.isEmpty) {
-    // adding an event on the main browser window to remove the previous event.
-    // if we don't do that, and the main window gets close before the score board, it creates an error in the main
-    // process, which we absolutely don't want.
-    dom.window.onbeforeunload = (_: BeforeUnloadEvent) => {
-      removeCloseHistoryHandler()
-    }
 
     scoreHistoryWindow = Some(new BrowserWindow(new BrowserWindowOptions {}))
 
@@ -477,6 +478,12 @@ class PlayerClient(val playerName: String,
 
         removeCloseHistoryHandler()
         dom.window.onbeforeunload = null
+        scoreHistoryWindow match {
+          case Some(window) => window.close()
+          case _ =>
+        }
+
+        VariableStorage.storeValue("fullScoreHistory", scoreHistoryInnerHTML)
 
         if (message == "gameEndedNormally") {
           VariableStorage.storeValue(
@@ -506,6 +513,7 @@ class PlayerClient(val playerName: String,
     if (connected) {
       sendReliable(PlayerConnecting(gameName, playerName, password))
     } else if (currentGameState.state != GameEnded) {
+      dom.window.onbeforeunload = null
       dom.window.alert("You have been disconnected from the server.")
       dom.window.location.href = "../../gamemenus/mainscreen/mainscreen.html"
     }

@@ -16,9 +16,7 @@ class ChatHandler[MessageType <: ChatMessageType](playerName: String,
                                                   fac: (String) => MessageType) {
 
   private case class Color(red: Int, green: Int, blue: Int) {
-    def toHex: String = "#" + {if (red < 16) "0" else ""} +
-      Integer.toHexString(red).toUpperCase + {if (green < 16) "0" else ""} + Integer.toHexString(green).toUpperCase +
-      {if (blue < 16) "0" else ""} + Integer.toHexString(blue).toUpperCase
+    def toHex: String = "#%02X%02X%02X".format(red, green, blue)
   }
 
   private val definedColors: List[Color] = List(
@@ -39,11 +37,15 @@ class ChatHandler[MessageType <: ChatMessageType](playerName: String,
       client.sendReliable(fac(input.value))
       input.value = ""
     }
-
   }
 
   def receivedChatMessage(msg: MessageType): Unit = {
-    new ChatMessageElement(msg.s, msg.sender, msg.time)
+    val before = allChatMessages.find(_.time < msg.time)
+    if (before.nonEmpty && before.get.sender == msg.sender) {
+      before.get.addText(msg.s)
+    } else {
+      new ChatMessageElement(msg.s, msg.sender, msg.time)
+    }
 
     container.scrollTop = container.scrollHeight - container.clientHeight
   }
@@ -51,7 +53,7 @@ class ChatHandler[MessageType <: ChatMessageType](playerName: String,
   private var allChatMessages: List[ChatMessageElement] = Nil
 
 
-  private class ChatMessageElement(msg: String, sender: String, val time: Long) {
+  private class ChatMessageElement(msg: String, val sender: String, val time: Long) {
     if (!playerColors.isDefinedAt(sender)) {
       playerColors += (sender -> definedColors(playerColors.size % definedColors.length))
     }
@@ -67,21 +69,30 @@ class ChatHandler[MessageType <: ChatMessageType](playerName: String,
     val senderElement: html.Paragraph = dom.document.createElement("p").asInstanceOf[html.Paragraph]
     //senderElement.style.color = playerColors(sender).toHex
     senderElement.style.height = "12px"
-    senderElement.textContent = sender
+    senderElement.style.fontWeight = "bold"
+    senderElement.innerHTML = sender
     element.appendChild(senderElement)
 
-    val textElement: html.Paragraph = dom.document.createElement("p").asInstanceOf[html.Paragraph]
-    textElement.textContent = msg
-    textElement.style.textAlign = "justify"
-    element.appendChild(textElement)
+
+    var textElements: List[html.Paragraph] = Nil
+
+    def addText(content: String): Unit = {
+      textElements = dom.document.createElement("p").asInstanceOf[html.Paragraph] +: textElements
+      textElements.head.textContent = content
+      textElements.head.style.textAlign = "justify"
+      textElements.head.style.width = "100%"
+      textElements.head.style.wordWrap = "break-word"
+      element.appendChild(textElements.head)
+    }
+
+    addText(msg)
 
     // we take messages until we find a message that was received more than 10 seconds earlier
     // (there will most likely not have 10s of delay, and even then, we would not really care any more about
     // sorting them correctly)
     val (after, before) = allChatMessages.takeWhile(_.time > time - 10000).partition(_.time > time)
     after.foreach(e => container.removeChild(e.element))
-    allChatMessages = (after :+ this) ++ before
-
+    allChatMessages = (after.sortBy(_.time) :+ this) ++ before
     container.appendChild(element)
     after.foreach(e => container.appendChild(e.element))
   }

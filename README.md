@@ -50,22 +50,37 @@ To join a game, the same information must be provided.
 
 Note that the server can be on a computer different from the one of each player.
 
-Remark: if you want to play with people that are not on the same wifi network as you are, you will probably have to do some extra work. Indeed, you have to set up a special NAT rule on your router, to redirect incoming packets coming through the game port.
+Remark: if you want to play with people that are not on the same wifi network as you are, you will probably have to do some extra work. Indeed, you have to set up a special NAT rule on your router, to redirect incoming packets coming through the game port. You should check your Internet access provider if you need more information regarding the procedure of setting up a NAT rule.
 
 ## GUI
 
 The GUI is currently utterly ugly, but this comes from my lack of artistic fiber. Feel free to customize the menus and the game GUI itself.
 
+## Patch notes
+
+### v0.1.1
+- polished the chat
+- changed game gui a bit, by moving some buttons around
+- the Bet window is no more modal, which allows to GUI interaction (chat, score button...) while it is open
+- save connection data between sessions
+- the score history window is now available from the score board
+- prevent the window to close when the game is not over
+
+### Pre-0.1.1
+There is no patch note record before v0.1.1.
+
 ## Upcoming features and fixes
 
-- save game name and player name when he or she join/host a game
+#### Upcoming
 - in the menu, having more feedback from the server (creation/dead...)
 - when clicking on launch game, ask confirmation by showing all game detail
-- fix the errors in server when a game ends (should be fixed (hopefully))
 - allow to kick someone from the game
-- add a "card viewer", to help people for which the cards would be too small (done, but maybe now there is the need of bigger card images)
 - allow to save and load games
-- when it is the 1 card deal, show a decoy card to click on when it's your turn (done)
 - drag cards on the table instead of clicking on them in order to play them (?)
-- in game chat (very modest first implementation)
 - insert version control
+
+#### Done
+- save game name and player name when he or she join/host a game
+- add a "card viewer", to help people for which the cards would be too small (maybe now there is the need of bigger card images)
+- when it is the 1 card deal, show a decoy card to click on when it's your turn
+- in game chat

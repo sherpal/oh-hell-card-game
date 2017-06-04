@@ -8,10 +8,10 @@ import gui._
  */
 class ScoreHistoryButton(playerClient: PlayerClient, anchorFrame: Frame) extends Button(UIParent) {
 
-  setSize(anchorFrame.width, anchorFrame.height)
+  setSize(anchorFrame.width, 30)
   setText("Scores")
   setTextColor(1,1,1)
-  setPoint(TopLeft, anchorFrame, BottomLeft)
+  setPoint(TopRight, anchorFrame, BottomRight, 0, -10)
 
   private val bg = createTexture()
   bg.setAllPoints()

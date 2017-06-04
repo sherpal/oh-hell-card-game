@@ -9,17 +9,22 @@ import gui._
  *
  * To view trick, player will have to put their mouse on the square.
  */
-class LastTrickViewer(playerFrames: Set[PlayerFrame]) extends Frame(UIParent) {
+class LastTrickViewer(playerFrames: Set[PlayerFrame], handFrame: HandFrame) extends Frame(UIParent) {
 
-  setSize(200, 50)
-  setPoint(BottomRight)
-  setFrameStrata(High)
+  setSize(200, 30)
+  setPoint(BottomLeft, handFrame, TopLeft, 0, 5)
 
   hide()
 
   private val background = createTexture()
   background.setAllPoints()
   background.setVertexColor(0,0,0)
+
+  private val border = createTexture(layer = Highlight)
+  border.setMode(LineMode)
+  border.lineWidth = 2
+  border.setAllPoints()
+  border.setVertexColor(1,1,1)
 
   private val text = createFontString()
   text.setAllPoints()

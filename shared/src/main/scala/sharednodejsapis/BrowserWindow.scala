@@ -27,6 +27,7 @@ class BrowserWindow(options: BrowserWindowOptions) extends EventEmitter {
 
   def removeAllListeners(eventType: String): Unit = js.native
 
+  def focus(): Unit = js.native
 }
 
 

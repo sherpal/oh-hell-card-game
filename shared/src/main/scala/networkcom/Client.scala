@@ -34,6 +34,8 @@ abstract class Client extends UDPNode {
 
   private val connection: Connection = new Connection(Peer(address, port), socket, onMessage)
 
+  def latency: Int = connection.latency
+
   socket.on("error", (err: ErrorEvent) => {
     println("server error:")
     println(s"${err.stack}")

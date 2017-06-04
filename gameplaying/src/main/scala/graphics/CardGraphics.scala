@@ -65,19 +65,6 @@ object CardGraphics {
   def cardsInHand(hand: List[Card]): List[CardGraphics] =
     defaultCards.filter(cardGraphics => hand.contains(cardGraphics.card))
 
-//  def placeCards(cards: List[CardGraphics], handFrame: HandFrame): Unit = {
-//    val nbrOfCards = cards.length
-//    val spaceBetweenCards = if (nbrOfCards * cardWidth < handFrame.width)
-//      cardWidth
-//    else
-//      (handFrame.width - cardWidth) / (nbrOfCards - 1)
-//
-//    val startingAbscissa = handFrame.center._1 - spaceBetweenCards / 2 * (nbrOfCards - 1)
-//    cards.zipWithIndex.foreach({
-//      case (card, idx) => card.setCenter(Complex(startingAbscissa + idx * spaceBetweenCards, handFrame.center._2))
-//    })
-//  }
-
   def drawHand(cards: List[CardGraphics]): Unit = {
     cards.foreach(_.drawCard())
   }

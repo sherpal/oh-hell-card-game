@@ -5,7 +5,8 @@ import globalvariables.VariableStorage
 import org.scalajs.dom
 import org.scalajs.dom.html
 import org.scalajs.dom.raw.MouseEvent
-import parsinginputs.RetrieveInfo
+import parsinginputs.{RetrieveInfo, SaveAndLoadConnectionInfo}
+
 
 /**
  * Manage what happens in the host game html file.
@@ -18,11 +19,14 @@ object HostGame {
     dom.document.getElementById("inputAddress").asInstanceOf[html.Input].value = "localhost"
   }
 
+  SaveAndLoadConnectionInfo.load(host = true)
+
   private var preGameClient: Option[PreGameClient] = None
 
 
   dom.document.getElementById("confirm").asInstanceOf[html.Anchor].onclick = (_: MouseEvent) => {
     val (playerName, gameName, address, port) = RetrieveInfo()
+    SaveAndLoadConnectionInfo.save(host = true, playerName, gameName, address, port)
     if (playerName != "") {
       preGameClient match {
         case Some(client) =>
